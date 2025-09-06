@@ -1,0 +1,5 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: purpura-llm-extractor
+spec: {}

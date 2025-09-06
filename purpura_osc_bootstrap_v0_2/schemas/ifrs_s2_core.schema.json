@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "IFRS S2 \u2014 Core (excerpt)",
+  "type": "object",
+  "properties": {
+    "document_meta": {
+      "type": "object",
+      "properties": {
+        "document_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "document_id"
+      ]
+    },
+    "kpis": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "document_meta",
+    "kpis"
+  ]
+}
