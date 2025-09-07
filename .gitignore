@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.env
+*.egg-info/
+
+# Node
+node_modules/
+
+# Data/artefatos
+*.parquet
+*.feather
+*.csv
+*.xlsx
+*.zip
+*.tar.gz
