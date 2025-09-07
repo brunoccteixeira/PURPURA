@@ -1,0 +1,17 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - name: Validate JSON files
+        run: |
+          set -e
+          find schemas -name "*.json" -print0 | xargs -0 -I{} python -m json.tool {}
+      - name: Ruff (lint)
+        run: |
+          python -m pip install --upgrade pip ruff
+          ruff check .
