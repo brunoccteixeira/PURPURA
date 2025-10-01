@@ -59,11 +59,19 @@ class LLMClient:
         self.mock = os.getenv("LLM_MOCK") == "1"
 
         if not self.mock:
-            self.client = OpenAI(
-                api_key=os.environ["OPENAI_API_KEY"],
-                organization=os.getenv("OPENAI_ORG_ID"),
-                project=os.getenv("OPENAI_PROJECT_ID"),
-            )
+            try:
+                self.client = OpenAI(
+                    api_key=os.environ["OPENAI_API_KEY"],
+                    organization=os.getenv("OPENAI_ORG_ID"),
+                    project=os.getenv("OPENAI_PROJECT_ID"),
+                )
+            except KeyError as e:
+                missing = e.args[0]
+                raise RuntimeError(
+                    f"Missing required environment variable: {missing}. "
+                    "Unset LLM_MOCK runs against OpenAI. Please set OPENAI_API_KEY "
+                    "(and optionally OPENAI_MODEL, OPENAI_ORG_ID, OPENAI_PROJECT_ID)."
+                )
 
     def extract_json(self, prompt: str, evidence_chunks: List[Dict[str, Any]] | None = None) -> Dict[str, Any]:
         if self.mock:

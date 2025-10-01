@@ -18,3 +18,15 @@ node_modules/
 *.xlsx
 *.zip
 *.tar.gz
+# PDFs brutos
+data/pdfs/clients/**
+# área opcional de chegada
+data/pdfs/incoming/**
+# manter amostras públicas
+!data/pdfs/samples/**
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+*~

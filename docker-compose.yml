@@ -1,0 +1,94 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mc-init:
+    image: minio/mc:latest
+    container_name: mc-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh","-c"]
+    command: |
+      mc alias set local http://minio:9000 minio minio123 &&
+      mc mb -p local/purpura || true &&
+      mc anonymous set download local/purpura || true &&
+      sleep 2
+    restart: on-failure
+
+  metastore-db:
+    image: postgres:13
+    container_name: metastore-db
+    environment:
+      POSTGRES_USER: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_DB: metastore
+    volumes:
+      - metastore_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d metastore"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  hive-metastore:
+    build:
+      context: .
+      dockerfile: hive.Dockerfile
+    container_name: hive-metastore
+    depends_on:
+      metastore-db:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      DB_HOST: metastore-db
+      DB_PORT: 5432
+      DB_NAME: metastore
+      DB_USER: hive
+      DB_PASSWORD: hive
+    ports:
+      - "9083:9083"
+    restart: unless-stopped
+    volumes:
+      - ./hive/conf:/opt/hive/conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "netstat -tln | grep 9083"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  trino:
+    image: trinodb/trino:latest
+    container_name: trino
+    depends_on:
+      hive-metastore:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms512m -Xmx1g"
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino/catalog:/etc/trino/catalog:ro
+
+volumes:
+  minio_data:
+  metastore_db_data:
+
