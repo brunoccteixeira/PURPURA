@@ -1,3 +1,7 @@
+# ===========================
+# Core Dependencies
+# ===========================
+
 # PDF Processing
 pypdf>=3.0.0
 
@@ -10,8 +14,80 @@ tiktoken>=0.5.0
 # Database
 trino>=0.328.0
 
-# Validation (optional but recommended)
+# Validation
 jsonschema>=4.0.0
 
 # Utilities
 requests>=2.31.0
+
+# ===========================
+# OS-Climate Integration
+# ===========================
+
+# Data Extraction (AI/NLP)
+osc-transformer-presteps>=0.5.0
+osc-transformer-based-extractor>=0.1.2
+
+# Physical Risk Calculations
+physrisk-lib>=0.27.0
+
+# ===========================
+# API & Backend
+# ===========================
+
+# FastAPI Framework
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# Authentication & Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-dotenv>=1.0.0
+
+# Async Database
+databases[postgresql]>=0.8.0
+asyncpg>=0.29.0
+
+# ===========================
+# Geospatial & Data Science
+# ===========================
+
+# H3 Geospatial Indexing
+h3>=3.7.6
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+
+# ===========================
+# RAG & Vector Store
+# ===========================
+
+# Vector Database
+chromadb>=0.4.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+
+# ===========================
+# Testing
+# ===========================
+
+# Testing Framework
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+httpx>=0.25.0  # For FastAPI testing
+
+# ===========================
+# Development Tools
+# ===========================
+
+# Code Quality
+ruff>=0.1.0
+black>=23.0.0
+mypy>=1.5.0
+
+# Type Stubs
+types-requests>=2.31.0
