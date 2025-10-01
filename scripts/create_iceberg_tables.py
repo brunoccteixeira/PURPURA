@@ -35,11 +35,35 @@ def main():
     _exec_retry(cur, f"""CREATE TABLE IF NOT EXISTS {cat}.{sch}.extract_results (
       doc_id VARCHAR,
       chunk_id VARCHAR,
-      result_json VARCHAR,
+      extraction_method VARCHAR,  -- 'transformer', 'llm', 'hybrid'
+      kpis_json VARCHAR,  -- Structured KPIs with confidence scores
+      confidence_avg DOUBLE,  -- Average confidence across all KPIs
+      agreement_count INTEGER,  -- Number of KPIs where both methods agreed
+      total_kpis INTEGER,  -- Total number of KPIs extracted
+      transformer_result VARCHAR,  -- Full transformer results (JSON)
+      llm_result VARCHAR,  -- Full LLM results (JSON)
+      schema_valid BOOLEAN,  -- Schema validation passed
+      schema_errors VARCHAR,  -- Validation errors if any
+      created_at BIGINT,
+      extracted_at TIMESTAMP  -- Timestamp from extraction process
+    ) WITH (format = 'PARQUET')""")
+
+    # New table for extraction confidence metrics
+    _exec_retry(cur, f"""CREATE TABLE IF NOT EXISTS {cat}.{sch}.extraction_confidence (
+      doc_id VARCHAR,
+      kpi_name VARCHAR,
+      value VARCHAR,
+      confidence DOUBLE,
+      method VARCHAR,  -- Method that provided the final value
+      agreement BOOLEAN,  -- Did both methods agree?
+      transformer_value VARCHAR,
+      transformer_confidence DOUBLE,
+      llm_value VARCHAR,
+      llm_confidence DOUBLE,
       created_at BIGINT
     ) WITH (format = 'PARQUET')""")
 
-    print('OK: schemas/tabelas prontas.')
+    print('OK: schemas/tabelas prontas (incluindo metadados de confiança).')
 
 if __name__ == '__main__':
     main()
