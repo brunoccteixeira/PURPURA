@@ -1,0 +1,41 @@
+{
+  "method": "transformer",
+  "kpis": {
+    "emissions_scope1": {
+      "value": null,
+      "confidence": 0.0,
+      "source_page": null,
+      "source_text": null,
+      "method": "transformer"
+    },
+    "emissions_scope2": {
+      "value": null,
+      "confidence": 0.0,
+      "source_page": null,
+      "source_text": null,
+      "method": "transformer"
+    }
+  },
+  "raw_json": {
+    "pages": [
+      {
+        "page_number": 1,
+        "text": "PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023.",
+        "tables": [],
+        "figures": []
+      },
+      {
+        "page_number": 2,
+        "text": "PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023. PRPURA — Demo IFRS S2 Este PDF contm texto fictcio para testar ingesto e chunking. S2 29: mtricas, riscos e oportunidades relacionados ao clima. S1 77–81: incerteza de mensurao; horizontes CP/MP/LP. Metas 2030: reduo de 30% GEE; base 2023.",
+        "tables": [],
+        "figures": []
+      }
+    ],
+    "metadata": {
+      "total_pages": 2,
+      "file_name": "ifrs_s2_demo.pdf",
+      "extractor": "osc-transformer-presteps"
+    }
+  },
+  "model": "osc-bert-base"
+}

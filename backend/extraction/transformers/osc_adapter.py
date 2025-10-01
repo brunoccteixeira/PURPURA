@@ -34,13 +34,20 @@ class OSCTransformerExtractor:
         """Initialize OS-Climate extraction tools"""
         try:
             # Import OS-Climate modules
-            # TODO: Import actual modules once they're installed
-            # from osc_transformer_presteps import PDFExtractor
+            from osc_transformer_presteps.content_extraction.extraction_factory import PDFExtractor
+            self.pdf_extractor = PDFExtractor()
+            logger.info("✓ OS-Climate PDF extractor initialized")
+
+            # KPI detector (will integrate next)
             # from osc_transformer_based_extractor import KPIDetector
-            logger.info("OS-Climate extractors initialized")
+            # self.kpi_detector = KPIDetector()
+
+            self.mock_mode = False
         except ImportError as e:
             logger.warning(f"OS-Climate tools not fully installed: {e}")
             logger.warning("Falling back to mock mode")
+            self.pdf_extractor = None
+            self.mock_mode = True
 
     def extract_from_pdf(
         self,
@@ -83,24 +90,111 @@ class OSCTransformerExtractor:
         Returns:
             Structured JSON representation of PDF
         """
-        # TODO: Implement actual osc-transformer-presteps integration
-        # For now, return mock structure
-        logger.info(f"Converting PDF to JSON: {pdf_path}")
+        if self.mock_mode or not self.pdf_extractor:
+            logger.warning("Mock mode: returning placeholder data")
+            return {
+                "pages": [
+                    {
+                        "page_number": 1,
+                        "text": "Sample extracted text from page 1",
+                        "tables": [],
+                        "figures": []
+                    }
+                ],
+                "metadata": {
+                    "total_pages": 1,
+                    "file_name": Path(pdf_path).name
+                }
+            }
 
-        return {
-            "pages": [
-                {
+        logger.info(f"Extracting PDF with OS-Climate: {pdf_path}")
+
+        try:
+            # Use OS-Climate PDF extractor
+            # Convert string path to Path object if needed
+            from pathlib import Path as PathlibPath
+            path_obj = PathlibPath(pdf_path) if isinstance(pdf_path, str) else pdf_path
+            extraction_result = self.pdf_extractor.extract(path_obj)
+
+            # OS-Climate returns ExtractionResponse object
+            # Structure: {page_num: {paragraph_id: {pdf_name, paragraph, page, ...}}}
+            pages = []
+
+            if hasattr(extraction_result, 'dictionary') and extraction_result.success:
+                # Parse OS-Climate format
+                page_dict = extraction_result.dictionary
+
+                # Group paragraphs by page
+                pages_text = {}
+                for page_key, paragraphs in page_dict.items():
+                    for para_id, para_data in paragraphs.items():
+                        page_num = para_data.get('page', int(page_key)) + 1  # Convert to 1-indexed
+                        text = para_data.get('paragraph', '')
+
+                        if page_num not in pages_text:
+                            pages_text[page_num] = []
+                        pages_text[page_num].append(text)
+
+                # Convert to page list
+                for page_num in sorted(pages_text.keys()):
+                    pages.append({
+                        "page_number": page_num,
+                        "text": "\n".join(pages_text[page_num]),
+                        "tables": [],  # TODO: Extract tables if available
+                        "figures": []  # TODO: Extract figures if available
+                    })
+
+            elif isinstance(extraction_result, dict) and "pages" in extraction_result:
+                # Fallback format
+                for page_data in extraction_result["pages"]:
+                    pages.append({
+                        "page_number": page_data.get("page_number", 0),
+                        "text": page_data.get("text", ""),
+                        "tables": page_data.get("tables", []),
+                        "figures": page_data.get("figures", [])
+                    })
+            elif isinstance(extraction_result, str):
+                # Simple text extraction
+                pages.append({
                     "page_number": 1,
-                    "text": "Sample extracted text from page 1",
+                    "text": extraction_result,
                     "tables": [],
                     "figures": []
+                })
+
+            return {
+                "pages": pages,
+                "metadata": {
+                    "total_pages": len(pages),
+                    "file_name": Path(pdf_path).name,
+                    "extractor": "osc-transformer-presteps"
                 }
-            ],
-            "metadata": {
-                "total_pages": 1,
-                "file_name": Path(pdf_path).name
             }
-        }
+
+        except Exception as e:
+            logger.error(f"PDF extraction failed: {e}")
+            # Fallback to pypdf
+            logger.info("Falling back to pypdf extraction")
+            from pypdf import PdfReader
+
+            reader = PdfReader(pdf_path)
+            pages = []
+            for i, page in enumerate(reader.pages):
+                pages.append({
+                    "page_number": i + 1,
+                    "text": page.extract_text() or "",
+                    "tables": [],
+                    "figures": []
+                })
+
+            return {
+                "pages": pages,
+                "metadata": {
+                    "total_pages": len(pages),
+                    "file_name": Path(pdf_path).name,
+                    "extractor": "pypdf (fallback)"
+                }
+            }
 
     def _detect_kpis(
         self,
