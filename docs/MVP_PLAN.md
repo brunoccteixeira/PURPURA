@@ -6,7 +6,7 @@
 
 ---
 
-## Week 1-2: Enhanced Data Extraction
+## Week 1-2: Enhanced Data Extraction ✅ COMPLETE
 
 ### Objectives
 - Integrate OS-Climate transformer-based extraction
@@ -14,23 +14,25 @@
 - Add confidence scoring and validation
 
 ### Tasks
-- [ ] Install and test `osc-transformer-presteps` on sample PDFs
-- [ ] Install and test `osc-transformer-based-extractor` for KPI detection
-- [ ] Build unified extraction service combining both methods
-- [ ] Add confidence scoring to extraction results
-- [ ] Update Trino schema for extraction metadata
-- [ ] Migrate existing `src/extract/llm_extractor.py` to `backend/extraction/llm/`
-- [ ] Create `backend/extraction/transformers/osc_adapter.py`
-- [ ] Create `backend/extraction/hybrid.py` orchestrator
+- [x] Install and test `osc-transformer-presteps` on sample PDFs
+- [x] Install and test `osc-transformer-based-extractor` for KPI detection
+- [x] Build unified extraction service combining both methods
+- [x] Add confidence scoring to extraction results
+- [x] Update Trino schema for extraction metadata
+- [x] Migrate existing `src/extract/llm_extractor.py` to `backend/extraction/llm/`
+- [x] Create `backend/extraction/transformers/osc_adapter.py`
+- [x] Create `backend/extraction/hybrid.py` orchestrator
 
 ### Deliverables
-- Working hybrid extraction pipeline
-- Extraction confidence metrics
-- Updated database schema
+- ✅ Working hybrid extraction pipeline
+- ✅ Extraction confidence metrics with voting system
+- ✅ Updated database schema
+
+**Completed:** 2025-10-21 (Commit: ae6f1b0)
 
 ---
 
-## Week 3-4: Physical Risk & API
+## Week 3-4: Physical Risk & API ✅ COMPLETE
 
 ### Objectives
 - Integrate physrisk library for climate risk calculations
@@ -38,43 +40,56 @@
 - Complete FastAPI backend with all endpoints
 
 ### Tasks
-- [ ] Install `physrisk-lib` and run example calculations
-- [ ] Adapt physrisk for Brazilian climate data (Cemaden API integration)
-- [ ] Build H3 geospatial indexing service
-- [ ] Implement authentication (JWT + multi-tenant)
-- [ ] Complete all API endpoints (documents, extraction, risk, compliance)
-- [ ] Add database connection layer (PostgreSQL + Trino)
-- [ ] Create MinIO client service for file storage
-- [ ] Write API integration tests
+- [x] Install `physrisk-lib` and run example calculations
+- [x] Adapt physrisk for Brazilian climate data (Cemaden API integration - mock mode)
+- [x] Build H3 geospatial indexing service
+- [x] Complete risk API endpoints (municipality, hazards, h3-grid, location, scenario-analysis)
+- [x] Create simplified RiskCalculator abstraction
+- [x] Implement BrazilianClimateData adapters (Cemaden, INPE, ANA)
+- [x] Write comprehensive tests (calculator, h3_service, API integration)
+- [ ] Implement authentication (JWT + multi-tenant) - deferred to Week 9-10
+- [ ] Add database connection layer (PostgreSQL + Trino) - partial, deferred
+- [ ] Create MinIO client service for file storage - deferred
 
 ### Deliverables
-- Functional REST API (all endpoints)
-- Municipal risk calculation engine
-- H3 grid risk mapping
+- ✅ Functional REST API (5 risk endpoints operational)
+- ✅ Municipal risk calculation engine (5 cities: SP, RJ, Salvador, BSB, Curitiba)
+- ✅ H3 grid risk mapping (GeoJSON + heatmap formats)
+- ✅ Brazilian climate data adapters (mock mode, ready for real APIs)
+- ✅ Documentation: docs/PHYSRISK_INTEGRATION.md
+
+**Completed:** 2025-10-21 (Commit: 04094be)
 
 ---
 
-## Week 5-6: Frontend Foundation
+## Week 5-6: Frontend Foundation 🚧 IN PROGRESS
 
 ### Objectives
 - Scaffold React application
 - Apply PÚRPURA branding
-- Build core UI components
+- Build core UI components with risk visualization
 
 ### Tasks
 - [ ] Initialize React + TypeScript app with Vite
 - [ ] Set up Tailwind CSS + design system
 - [ ] Create PÚRPURA branding (colors, logo, typography)
 - [ ] Implement Portuguese (pt-BR) i18n
+- [ ] Build Leaflet map component
+- [ ] Integrate H3 hexagonal grid visualization
+- [ ] Build municipal risk dashboard
 - [ ] Build document upload + management UI
 - [ ] Build extraction results viewer (JSON tree with confidence scores)
 - [ ] Create API client service (TanStack Query)
 - [ ] Set up routing (React Router)
 
 ### Deliverables
-- Branded React application
+- Branded React application with PÚRPURA identity
+- Interactive risk map with H3 visualization
+- Municipal risk dashboard
 - Document management interface
 - Extraction results viewer
+
+**Status:** Starting now (2025-10-21)
 
 ---
 

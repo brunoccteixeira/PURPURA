@@ -219,10 +219,13 @@ All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and c
 ### Phase 1: Municipal MVP (Weeks 1-12) — **Current**
 - [x] Data lakehouse infrastructure
 - [x] LLM extraction pipeline (OpenAI)
+- [x] Hybrid extraction system (transformer + LLM with confidence voting)
 - [x] FastAPI backend scaffold
-- [ ] Transformer-based extraction integration
-- [ ] Physical risk engine (physrisk)
-- [ ] Municipal dashboard UI
+- [x] Physical risk engine (physrisk + Brazilian adapters)
+- [x] H3 geospatial indexing
+- [x] REST API endpoints (risk assessment)
+- [ ] Municipal dashboard UI (Week 5-6)
+- [ ] Real Brazilian APIs integration (Cemaden, INPE, ANA)
 - [ ] 2 pilot deployments
 
 ### Phase 2: Enterprise TSB (Months 4-6)
@@ -239,12 +242,32 @@ All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and c
 
 ---
 
-## 📈 Success Metrics (Week 12 Target)
+## 📈 Progress Tracking
 
-- ✅ 2 pilot customers deployed
-- ✅ 10+ documents processed end-to-end
-- ✅ <5min extraction time per document
-- ✅ >85% pilot user satisfaction
+### Week 1-2: Data Extraction ✅ COMPLETE
+- ✅ Hybrid extraction pipeline (OS-Climate + OpenAI)
+- ✅ Confidence voting system
+- ✅ Iceberg tables + Trino integration
+
+### Week 3-4: Physical Risk & API ✅ COMPLETE
+- ✅ physrisk-lib integration
+- ✅ H3 geospatial risk mapping
+- ✅ Brazilian climate data adapters (Cemaden, INPE, ANA - mock)
+- ✅ Complete REST API endpoints
+- ✅ Municipal risk calculations (5 cities)
+
+### Week 5-6: Frontend Dashboard 🚧 IN PROGRESS
+- [ ] React + TypeScript + Vite
+- [ ] Tailwind CSS + design system
+- [ ] PÚRPURA branding
+- [ ] Leaflet map with H3 visualization
+- [ ] Municipal risk dashboard
+
+### Success Metrics (Week 12 Target)
+- ⏳ 2 pilot customers deployed
+- ⏳ 10+ documents processed end-to-end
+- ⏳ <5min extraction time per document
+- ⏳ >85% pilot user satisfaction
 - ✅ 1 Colab partnership MoU signed
 
 ---
