@@ -10,7 +10,7 @@ from slowapi.errors import RateLimitExceeded
 import os
 
 # Import routers
-from .routers import documents, extraction, risk, compliance, health, metrics, ratelimit
+from .routers import documents, extraction, risk, compliance, health, metrics, ratelimit, prometheus
 
 # Import rate limiter
 from backend.middleware.rate_limit import (
@@ -22,8 +22,12 @@ from backend.middleware.rate_limit import (
 # Import request logging middleware
 from backend.middleware.request_logging import RequestLoggingMiddleware
 
-# Import structured logger
+# Import Prometheus middleware
+from backend.middleware.prometheus_middleware import PrometheusMiddleware
+
+# Import structured logger and metrics
 from backend.utils.logging import get_logger
+from backend.utils.prometheus_metrics import initialize_app_info
 
 # Environment
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
@@ -43,6 +47,11 @@ async def lifespan(app: FastAPI):
         environment=ENV,
         message="PÚRPURA API starting"
     )
+
+    # Initialize Prometheus metrics
+    initialize_app_info(version=API_VERSION, environment=ENV)
+    logger.info("prometheus_metrics_initialized", version=API_VERSION, environment=ENV)
+
     # TODO: Initialize database connections
     # TODO: Load ML models
     # TODO: Connect to Trino
@@ -80,10 +89,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Prometheus metrics middleware (before logging to capture all metrics)
+app.add_middleware(
+    PrometheusMiddleware,
+    skip_paths=["/metrics", "/health", "/api/v1/health"],  # Skip metrics endpoint itself
+)
+
 # Request logging middleware (before rate limit to log all requests)
 app.add_middleware(
     RequestLoggingMiddleware,
-    skip_paths=["/health", "/api/v1/health"],  # Skip health checks from logs
+    skip_paths=["/health", "/api/v1/health", "/metrics"],  # Skip health checks and metrics from logs
     log_request_body=False,  # Don't log request bodies by default
     log_response_body=False,  # Don't log response bodies by default
 )
@@ -92,6 +107,7 @@ app.add_middleware(
 app.middleware("http")(rate_limit_middleware)
 
 # Include routers
+app.include_router(prometheus.router)  # Prometheus metrics at /metrics
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(metrics.router, prefix="/api/v1")
 app.include_router(ratelimit.router, prefix="/api/v1")

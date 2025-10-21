@@ -1,0 +1,62 @@
+# Prometheus Configuration for PÚRPURA Climate OS
+
+global:
+  scrape_interval: 15s  # Scrape targets every 15 seconds
+  evaluation_interval: 15s  # Evaluate rules every 15 seconds
+  external_labels:
+    cluster: 'purpura-local'
+    environment: 'development'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Load rules once and periodically evaluate them
+# rule_files:
+#   - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # PÚRPURA API
+  - job_name: 'purpura-api'
+    scrape_interval: 10s  # Scrape API more frequently
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:8000']  # Backend API
+        labels:
+          service: 'purpura-api'
+          component: 'backend'
+    # Relabeling for better metric organization
+    metric_relabel_configs:
+      # Keep all purpura_ metrics
+      - source_labels: [__name__]
+        regex: 'purpura_.*'
+        action: keep
+      # Also keep standard Python metrics
+      - source_labels: [__name__]
+        regex: 'python_.*|process_.*'
+        action: keep
+
+  # Redis (if metrics enabled)
+  # - job_name: 'redis'
+  #   static_configs:
+  #     - targets: ['redis:6379']
+
+  # MinIO (if metrics enabled)
+  # - job_name: 'minio'
+  #   metrics_path: /minio/v2/metrics/cluster
+  #   static_configs:
+  #     - targets: ['minio:9000']
+
+  # Trino (if metrics enabled)
+  # - job_name: 'trino'
+  #   static_configs:
+  #     - targets: ['trino:8080']
