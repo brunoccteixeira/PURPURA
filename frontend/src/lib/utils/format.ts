@@ -33,6 +33,16 @@ export const formatConfidence = (confidence: number): string => {
 };
 
 /**
+ * Get risk level label in Portuguese
+ */
+export const getRiskLevel = (score: number): string => {
+  if (score < 0.3) return 'Baixo';
+  if (score < 0.5) return 'Moderado';
+  if (score < 0.7) return 'Alto';
+  return 'Crítico';
+};
+
+/**
  * Get hazard label in Portuguese
  */
 export const getHazardLabel = (hazardType: string): string => {

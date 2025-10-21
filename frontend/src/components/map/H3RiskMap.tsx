@@ -4,7 +4,6 @@
 import { useState, useMemo } from 'react';
 import DeckGL from '@deck.gl/react';
 import { H3HexagonLayer } from '@deck.gl/geo-layers';
-import { Map as MapGL } from 'react-map-gl';
 import type { MapViewState } from '@deck.gl/core';
 import { getRiskColorRGBA } from '../../lib/utils/colors';
 import { formatRiskScore } from '../../lib/utils/format';
@@ -15,8 +14,6 @@ interface H3RiskMapProps {
   initialViewState?: Partial<MapViewState>;
   onHexClick?: (h3Index: string, riskScore: number) => void;
 }
-
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || '';
 
 export function H3RiskMap({
   gridData,
@@ -85,14 +82,8 @@ export function H3RiskMap({
         controller={true}
         layers={layers}
       >
-        {MAPBOX_TOKEN ? (
-          <MapGL
-            mapboxAccessToken={MAPBOX_TOKEN}
-            mapStyle="mapbox://styles/mapbox/light-v11"
-          />
-        ) : (
-          <div className="absolute inset-0 bg-gray-100" />
-        )}
+        {/* Simple background - no basemap needed for now */}
+        <div className="absolute inset-0 bg-gray-100" />
       </DeckGL>
 
       {/* Tooltip */}
