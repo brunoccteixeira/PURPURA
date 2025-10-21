@@ -4,7 +4,11 @@
 import { useState } from 'react'
 import { MunicipalitySelector } from '../components/ui/MunicipalitySelector'
 import { RiskCards } from '../components/risk/RiskCards'
+import { VulnerabilityIndicators } from '../components/risk/VulnerabilityIndicators'
+import { RiskTimeline } from '../components/charts/RiskTimeline'
+import { ScenarioComparison } from '../components/charts/ScenarioComparison'
 import { H3RiskMap } from '../components/map/H3RiskMap'
+import { ChartSkeleton } from '../components/ui/LoadingSkeleton'
 import { useMunicipalRisk, useH3Grid } from '../lib/api/risk'
 import { AlertCircle, Info } from 'lucide-react'
 
@@ -71,6 +75,27 @@ export function DashboardPage() {
         hazards={riskData?.hazards || []}
         isLoading={isLoadingRisk}
       />
+
+      {/* Timeline Chart */}
+      {isLoadingRisk ? (
+        <ChartSkeleton />
+      ) : riskData?.hazards ? (
+        <RiskTimeline hazards={riskData.hazards} />
+      ) : null}
+
+      {/* Scenario Comparison */}
+      {isLoadingRisk ? (
+        <ChartSkeleton />
+      ) : (
+        <ScenarioComparison ibgeCode={selectedCity} />
+      )}
+
+      {/* Vulnerability Indicators */}
+      {isLoadingRisk ? (
+        <ChartSkeleton />
+      ) : riskData?.vulnerability ? (
+        <VulnerabilityIndicators vulnerability={riskData.vulnerability} />
+      ) : null}
 
       {/* Map Section */}
       <div className="card p-0 overflow-hidden">
