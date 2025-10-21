@@ -2,13 +2,22 @@
 PÚRPURA Climate OS — API Server
 FastAPI application for climate risk assessment and IFRS S2 compliance
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 import os
 
 # Import routers
-from .routers import documents, extraction, risk, compliance, health, metrics
+from .routers import documents, extraction, risk, compliance, health, metrics, ratelimit
+
+# Import rate limiter
+from backend.middleware.rate_limit import (
+    limiter,
+    custom_rate_limit_exceeded_handler,
+    rate_limit_middleware
+)
 
 # Environment
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
@@ -37,6 +46,12 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Add rate limiter to app state
+app.state.limiter = limiter
+
+# Add rate limit exception handler
+app.add_exception_handler(RateLimitExceeded, custom_rate_limit_exceeded_handler)
+
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -46,9 +61,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Rate limit middleware
+app.middleware("http")(rate_limit_middleware)
+
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
 app.include_router(metrics.router, prefix="/api/v1")
+app.include_router(ratelimit.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1/documents", tags=["Documents"])
 app.include_router(extraction.router, prefix="/api/v1/extraction", tags=["Extraction"])
 app.include_router(risk.router, prefix="/api/v1/risk", tags=["Risk Assessment"])
