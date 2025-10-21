@@ -1,0 +1,30 @@
+{
+  "document_meta": {
+    "doc_id": "test_climate_report_2023",
+    "title": "Annual Climate Disclosure Report 2023",
+    "year": 2023,
+    "source": "test_fixture"
+  },
+  "kpis": {
+    "physical_risk_exposure": {
+      "mentioned": true,
+      "details": "Identified acute risks from extreme weather events including hurricanes, floods, and wildfires affecting coastal facilities. Chronic risks include rising sea levels and prolonged droughts impacting water availability for production."
+    },
+    "transition_risk_exposure": {
+      "mentioned": true,
+      "details": "Key transition risks include carbon pricing mechanisms, shift to low-carbon technologies, changing consumer preferences, and potential reputation impacts from climate commitments."
+    },
+    "ghg_emissions": {
+      "scope1": 125000.0,
+      "scope2": 78000.0,
+      "scope3": 450000.0,
+      "unit": "tCO2e"
+    },
+    "emission_reduction_targets": {
+      "target_year": 2030,
+      "reduction_percentage": 50.0,
+      "baseline_year": 2020
+    }
+  },
+  "extracted_at": "2023-12-15T10:30:00Z"
+}

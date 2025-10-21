@@ -1,0 +1,21 @@
+{
+  "document_meta": {
+    "doc_id": "test_partial_doc",
+    "title": "Partial Climate Data",
+    "year": 2023
+  },
+  "kpis": {
+    "physical_risk_exposure": {
+      "mentioned": true,
+      "details": "Limited information on physical risks."
+    },
+    "transition_risk_exposure": {
+      "mentioned": false
+    },
+    "ghg_emissions": {
+      "scope1": 50000.0,
+      "unit": "tCO2e"
+    }
+  },
+  "extracted_at": "2023-12-15T10:30:00Z"
+}

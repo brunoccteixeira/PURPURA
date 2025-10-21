@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "Test IFRS S2 Schema",
+  "description": "Simplified IFRS S2 schema for testing purposes",
+  "properties": {
+    "document_meta": {
+      "type": "object",
+      "description": "Document metadata",
+      "properties": {
+        "doc_id": {
+          "type": "string",
+          "description": "Unique document identifier"
+        },
+        "title": {
+          "type": "string",
+          "description": "Document title"
+        },
+        "year": {
+          "type": "integer",
+          "description": "Reporting year"
+        },
+        "source": {
+          "type": "string",
+          "description": "Document source"
+        }
+      },
+      "required": ["doc_id"]
+    },
+    "kpis": {
+      "type": "object",
+      "description": "Climate-related KPIs",
+      "properties": {
+        "physical_risk_exposure": {
+          "type": "object",
+          "properties": {
+            "mentioned": {
+              "type": "boolean",
+              "description": "Whether physical risks are mentioned"
+            },
+            "details": {
+              "type": "string",
+              "description": "Details about physical risk exposure"
+            }
+          }
+        },
+        "transition_risk_exposure": {
+          "type": "object",
+          "properties": {
+            "mentioned": {
+              "type": "boolean",
+              "description": "Whether transition risks are mentioned"
+            },
+            "details": {
+              "type": "string",
+              "description": "Details about transition risk exposure"
+            }
+          }
+        },
+        "ghg_emissions": {
+          "type": "object",
+          "properties": {
+            "scope1": {
+              "type": "number",
+              "description": "Direct GHG emissions (Scope 1)"
+            },
+            "scope2": {
+              "type": "number",
+              "description": "Indirect GHG emissions from energy (Scope 2)"
+            },
+            "scope3": {
+              "type": "number",
+              "description": "Other indirect GHG emissions (Scope 3)"
+            },
+            "unit": {
+              "type": "string",
+              "description": "Unit of measurement (e.g., tCO2e)"
+            }
+          }
+        },
+        "emission_reduction_targets": {
+          "type": "object",
+          "properties": {
+            "target_year": {
+              "type": "integer",
+              "description": "Target year for emissions reduction"
+            },
+            "reduction_percentage": {
+              "type": "number",
+              "description": "Percentage reduction target"
+            },
+            "baseline_year": {
+              "type": "integer",
+              "description": "Baseline year for comparison"
+            }
+          }
+        }
+      }
+    }
+  },
+  "required": ["document_meta", "kpis"]
+}
