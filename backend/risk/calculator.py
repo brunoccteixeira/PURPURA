@@ -6,8 +6,18 @@ from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from enum import Enum
 import logging
+import os
 
 logger = logging.getLogger(__name__)
+
+# Import Brazilian API clients
+try:
+    from backend.integrations.inpe_client import INPEClient
+    from backend.integrations.ana_client import ANAClient
+    APIS_AVAILABLE = True
+except ImportError:
+    logger.warning("Brazilian API clients not available - using mock mode only")
+    APIS_AVAILABLE = False
 
 
 class RiskScenario(str, Enum):
@@ -54,15 +64,32 @@ class LocationRisk:
 class BrazilianClimateData:
     """
     Adapter for Brazilian climate data sources
-    TODO: Integrate with:
-    - Cemaden: https://www.cemaden.gov.br/
-    - INPE: http://www.inpe.br/
-    - ANA: https://www.gov.br/ana/
+    Integrates with:
+    - INPE: Climate projections and temperature data
+    - ANA: Hydrological data and flood risk
+    - Cemaden: TODO - no public API available yet
     """
 
-    def __init__(self):
-        self.mock_mode = True  # TODO: Implement real API calls
-        logger.info("BrazilianClimateData initialized (mock mode)")
+    def __init__(self, use_real_apis: bool = True):
+        """
+        Initialize Brazilian data adapter
+
+        Args:
+            use_real_apis: Whether to use real APIs (with fallback to mock)
+        """
+        self.use_real_apis = use_real_apis and APIS_AVAILABLE
+
+        # Initialize API clients
+        if self.use_real_apis:
+            try:
+                self.inpe_client = INPEClient()
+                self.ana_client = ANAClient()
+                logger.info("✅ Brazilian API clients initialized (INPE + ANA)")
+            except Exception as e:
+                logger.warning(f"Failed to initialize API clients: {e}. Falling back to mock mode.")
+                self.use_real_apis = False
+        else:
+            logger.info("BrazilianClimateData initialized (mock mode)")
 
     def get_flood_risk(
         self,
@@ -72,30 +99,59 @@ class BrazilianClimateData:
         year: int
     ) -> HazardResult:
         """
-        Get flood risk from Cemaden/ANA data
+        Get flood risk from ANA hydrological data
 
-        TODO: Real implementation should:
-        1. Query Cemaden historical flood events
-        2. Use ANA hydrological data
-        3. Apply climate projections from INPE
+        Uses:
+        1. ANA telemetric stations for recent rainfall
+        2. Climate projections to adjust future risk
         """
-        if self.mock_mode:
-            # Mock data based on coordinates
-            # Higher risk for coastal/lowland areas
-            base_risk = 0.3 if latitude > -24 else 0.4
+        if self.use_real_apis:
+            try:
+                # Find nearest ANA station
+                station = self.ana_client.find_nearest_station(latitude, longitude)
 
-            return HazardResult(
-                hazard_type=HazardType.FLOOD,
-                current_risk=base_risk,
-                projected_2030=base_risk * 1.2,
-                projected_2050=base_risk * 1.5,
-                confidence=0.6,
-                data_source="mock_cemaden",
-                unit="probability"
-            )
+                if station:
+                    # Get current flood risk from rainfall data
+                    current_risk = self.ana_client.get_flood_risk_from_rainfall(
+                        station.code, days=30
+                    )
 
-        # TODO: Implement real Cemaden API call
-        raise NotImplementedError("Real Cemaden integration pending")
+                    # Apply climate change multipliers based on scenario
+                    scenario_multipliers = {
+                        RiskScenario.SSP126: {2030: 1.1, 2050: 1.2},
+                        RiskScenario.SSP245: {2030: 1.2, 2050: 1.5},
+                        RiskScenario.SSP585: {2030: 1.3, 2050: 1.8},
+                    }
+
+                    multiplier_2030 = scenario_multipliers.get(scenario, {}).get(2030, 1.2)
+                    multiplier_2050 = scenario_multipliers.get(scenario, {}).get(2050, 1.5)
+
+                    logger.info(f"✅ Flood risk from ANA station {station.code}: {current_risk}")
+
+                    return HazardResult(
+                        hazard_type=HazardType.FLOOD,
+                        current_risk=current_risk,
+                        projected_2030=min(current_risk * multiplier_2030, 1.0),
+                        projected_2050=min(current_risk * multiplier_2050, 1.0),
+                        confidence=0.7,
+                        data_source=f"ANA_{station.code}",
+                        unit="risk_score"
+                    )
+            except Exception as e:
+                logger.warning(f"ANA API failed: {e}. Using mock data.")
+
+        # Fallback to mock data
+        base_risk = 0.3 if latitude > -24 else 0.4
+
+        return HazardResult(
+            hazard_type=HazardType.FLOOD,
+            current_risk=base_risk,
+            projected_2030=base_risk * 1.2,
+            projected_2050=base_risk * 1.5,
+            confidence=0.6,
+            data_source="mock_ana",
+            unit="probability"
+        )
 
     def get_drought_risk(
         self,
@@ -104,22 +160,58 @@ class BrazilianClimateData:
         scenario: RiskScenario,
         year: int
     ) -> HazardResult:
-        """Get drought risk from INPE/ANA data"""
-        if self.mock_mode:
-            # Higher drought risk for semi-arid regions (Northeast)
-            base_risk = 0.5 if latitude > -10 else 0.2
+        """
+        Get drought risk from INPE climate projections
 
-            return HazardResult(
-                hazard_type=HazardType.DROUGHT,
-                current_risk=base_risk,
-                projected_2030=base_risk * 1.3,
-                projected_2050=base_risk * 1.6,
-                confidence=0.7,
-                data_source="mock_inpe",
-                unit="severity_index"
-            )
+        Uses INPE precipitation projections to estimate drought risk
+        """
+        if self.use_real_apis:
+            try:
+                # Map scenario names (SSP -> RCP for INPE)
+                scenario_map = {
+                    RiskScenario.SSP126: 'rcp26',
+                    RiskScenario.SSP245: 'rcp45',
+                    RiskScenario.SSP585: 'rcp85',
+                }
+                rcp_scenario = scenario_map.get(scenario, 'rcp45')
 
-        raise NotImplementedError("Real INPE/ANA integration pending")
+                # Get drought risk from INPE
+                current_risk = self.inpe_client.get_drought_risk_projection(
+                    latitude, longitude, rcp_scenario, 2024
+                )
+                risk_2030 = self.inpe_client.get_drought_risk_projection(
+                    latitude, longitude, rcp_scenario, 2030
+                )
+                risk_2050 = self.inpe_client.get_drought_risk_projection(
+                    latitude, longitude, rcp_scenario, 2050
+                )
+
+                logger.info(f"✅ Drought risk from INPE: {current_risk} → {risk_2050}")
+
+                return HazardResult(
+                    hazard_type=HazardType.DROUGHT,
+                    current_risk=current_risk,
+                    projected_2030=risk_2030,
+                    projected_2050=risk_2050,
+                    confidence=0.75,
+                    data_source="INPE",
+                    unit="risk_score"
+                )
+            except Exception as e:
+                logger.warning(f"INPE API failed: {e}. Using mock data.")
+
+        # Fallback to mock data
+        base_risk = 0.5 if latitude > -10 else 0.2
+
+        return HazardResult(
+            hazard_type=HazardType.DROUGHT,
+            current_risk=base_risk,
+            projected_2030=base_risk * 1.3,
+            projected_2050=base_risk * 1.6,
+            confidence=0.7,
+            data_source="mock_inpe",
+            unit="severity_index"
+        )
 
     def get_heat_stress_risk(
         self,
@@ -128,23 +220,59 @@ class BrazilianClimateData:
         scenario: RiskScenario,
         year: int
     ) -> HazardResult:
-        """Get heat stress risk from INPE projections"""
-        if self.mock_mode:
-            # Higher heat stress for inland/northern areas
-            base_risk = 0.6 if latitude > -15 else 0.3
+        """
+        Get heat stress risk from INPE temperature projections
 
-            return HazardResult(
-                hazard_type=HazardType.HEAT_STRESS,
-                current_risk=base_risk,
-                projected_2030=base_risk * 1.4,
-                projected_2050=base_risk * 2.0,
-                confidence=0.8,
-                data_source="mock_inpe",
-                raw_value=35.5,
-                unit="degrees_celsius"
-            )
+        Uses INPE climate models to project temperature increases
+        """
+        if self.use_real_apis:
+            try:
+                # Map scenario names (SSP -> RCP for INPE)
+                scenario_map = {
+                    RiskScenario.SSP126: 'rcp26',
+                    RiskScenario.SSP245: 'rcp45',
+                    RiskScenario.SSP585: 'rcp85',
+                }
+                rcp_scenario = scenario_map.get(scenario, 'rcp45')
 
-        raise NotImplementedError("Real INPE temperature projection pending")
+                # Get heat stress risk from INPE
+                current_risk = self.inpe_client.get_heat_stress_projection(
+                    latitude, longitude, rcp_scenario, 2024
+                )
+                risk_2030 = self.inpe_client.get_heat_stress_projection(
+                    latitude, longitude, rcp_scenario, 2030
+                )
+                risk_2050 = self.inpe_client.get_heat_stress_projection(
+                    latitude, longitude, rcp_scenario, 2050
+                )
+
+                logger.info(f"✅ Heat stress risk from INPE: {current_risk} → {risk_2050}")
+
+                return HazardResult(
+                    hazard_type=HazardType.HEAT_STRESS,
+                    current_risk=current_risk,
+                    projected_2030=risk_2030,
+                    projected_2050=risk_2050,
+                    confidence=0.85,
+                    data_source="INPE",
+                    unit="risk_score"
+                )
+            except Exception as e:
+                logger.warning(f"INPE API failed: {e}. Using mock data.")
+
+        # Fallback to mock data
+        base_risk = 0.6 if latitude > -15 else 0.3
+
+        return HazardResult(
+            hazard_type=HazardType.HEAT_STRESS,
+            current_risk=base_risk,
+            projected_2030=base_risk * 1.4,
+            projected_2050=base_risk * 2.0,
+            confidence=0.8,
+            data_source="mock_inpe",
+            raw_value=35.5,
+            unit="degrees_celsius"
+        )
 
 
 class RiskCalculator:
