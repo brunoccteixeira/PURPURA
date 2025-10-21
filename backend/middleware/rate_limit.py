@@ -24,7 +24,9 @@ from slowapi.errors import RateLimitExceeded
 from fastapi import Request, Response
 from fastapi.responses import JSONResponse
 
-logger = logging.getLogger(__name__)
+from backend.utils.logging import get_logger
+
+logger = get_logger(__name__)
 
 
 def get_identifier(request: Request) -> str:
@@ -137,14 +139,28 @@ def custom_rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded)
         except:
             retry_seconds = 60  # Default to 60 seconds
 
+    identifier = get_identifier(request)
+
+    # Log rate limit exceeded with structured data
+    logger.warning(
+        "rate_limit_exceeded",
+        identifier=identifier,
+        endpoint=str(request.url.path),
+        method=str(request.method),
+        limit=str(limit_str),
+        retry_after_seconds=retry_seconds if retry_seconds is not None else None,
+        client_ip=str(request.client.host) if request.client else None,
+        user_agent=str(request.headers.get("user-agent")) if request.headers.get("user-agent") else None,
+    )
+
     response = JSONResponse(
         status_code=429,
         content={
             "error": "rate_limit_exceeded",
             "message": "Too many requests. Please slow down.",
             "retry_after_seconds": retry_seconds,
-            "limit": limit_str,
-            "identifier": get_identifier(request),
+            "limit": str(limit_str),  # Ensure it's a string
+            "identifier": str(identifier),
             "timestamp": datetime.utcnow().isoformat(),
         }
     )
@@ -167,9 +183,20 @@ try:
         retry_after="http-date",
         swallow_errors=True  # Don't crash if storage unavailable
     )
-    logger.info(f"✅ Rate limiter initialized: {storage_uri}")
+    logger.info(
+        "rate_limiter_initialized",
+        storage_uri=storage_uri,
+        default_limit="60/minute",
+        headers_enabled=True
+    )
 except Exception as e:
-    logger.warning(f"Failed to initialize rate limiter with storage: {e}. Using in-memory fallback.")
+    logger.warning(
+        "rate_limiter_fallback",
+        error=str(e),
+        error_type=type(e).__name__,
+        fallback_storage="memory://",
+        message="Failed to initialize rate limiter with configured storage, using in-memory fallback"
+    )
     limiter = Limiter(
         key_func=get_identifier,
         storage_uri="memory://",

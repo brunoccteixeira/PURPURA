@@ -19,22 +19,41 @@ from backend.middleware.rate_limit import (
     rate_limit_middleware
 )
 
+# Import request logging middleware
+from backend.middleware.request_logging import RequestLoggingMiddleware
+
+# Import structured logger
+from backend.utils.logging import get_logger
+
 # Environment
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
 ENV = os.getenv("ENV", "development")
+
+# Get logger
+logger = get_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan events"""
     # Startup
-    print(f"🟣 PÚRPURA API v{API_VERSION} starting ({ENV})...")
+    logger.info(
+        "api_startup",
+        version=API_VERSION,
+        environment=ENV,
+        message="PÚRPURA API starting"
+    )
     # TODO: Initialize database connections
     # TODO: Load ML models
     # TODO: Connect to Trino
     yield
     # Shutdown
-    print("🟣 PÚRPURA API shutting down...")
+    logger.info(
+        "api_shutdown",
+        version=API_VERSION,
+        environment=ENV,
+        message="PÚRPURA API shutting down"
+    )
     # TODO: Close database connections
 
 
@@ -59,6 +78,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# Request logging middleware (before rate limit to log all requests)
+app.add_middleware(
+    RequestLoggingMiddleware,
+    skip_paths=["/health", "/api/v1/health"],  # Skip health checks from logs
+    log_request_body=False,  # Don't log request bodies by default
+    log_response_body=False,  # Don't log response bodies by default
 )
 
 # Rate limit middleware
