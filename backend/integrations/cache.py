@@ -3,14 +3,15 @@ Cache system for API responses
 
 Supports multiple backends:
 - In-memory cache (default, no dependencies)
-- Redis cache (optional, requires redis package)
+- Redis cache (recommended for production, requires redis package)
 """
 
 import os
 import logging
 import json
 import time
-from typing import Optional, Any, Dict
+import pickle
+from typing import Optional, Any, Dict, Protocol
 from datetime import datetime, timedelta
 from dataclasses import dataclass, asdict
 from functools import wraps
@@ -154,18 +155,286 @@ class InMemoryCache:
         }
 
 
+class RedisCache:
+    """
+    Redis-based distributed cache with TTL support
+
+    Benefits over InMemoryCache:
+    - Shared across multiple processes/servers
+    - Persistent across restarts (configurable)
+    - Scalable to large datasets
+    - Built-in expiration handling
+    """
+
+    def __init__(
+        self,
+        default_ttl: int = 300,
+        host: str = "localhost",
+        port: int = 6379,
+        db: int = 0,
+        password: Optional[str] = None,
+        key_prefix: str = "purpura:"
+    ):
+        """
+        Initialize Redis cache
+
+        Args:
+            default_ttl: Default time-to-live in seconds
+            host: Redis host
+            port: Redis port
+            db: Redis database number
+            password: Redis password (if required)
+            key_prefix: Prefix for all cache keys
+        """
+        try:
+            import redis
+        except ImportError:
+            raise ImportError(
+                "Redis package not installed. Install with: pip install redis[hiredis]"
+            )
+
+        self.default_ttl = default_ttl
+        self.key_prefix = key_prefix
+
+        # Connect to Redis with connection pooling
+        pool = redis.ConnectionPool(
+            host=host,
+            port=port,
+            db=db,
+            password=password,
+            decode_responses=False,  # We'll use pickle for values
+            max_connections=10,
+            socket_keepalive=True,
+            socket_connect_timeout=5,
+            health_check_interval=30
+        )
+
+        self.client = redis.Redis(connection_pool=pool)
+
+        # Test connection
+        try:
+            self.client.ping()
+            logger.info(
+                f"RedisCache initialized: {host}:{port}/{db} (prefix: {key_prefix}, TTL: {default_ttl}s)"
+            )
+        except Exception as e:
+            logger.error(f"Failed to connect to Redis: {e}")
+            raise
+
+    def _make_key(self, key: str) -> str:
+        """Add prefix to key"""
+        return f"{self.key_prefix}{key}"
+
+    def get(self, key: str) -> Optional[Any]:
+        """
+        Get value from Redis cache
+
+        Args:
+            key: Cache key
+
+        Returns:
+            Cached value or None if not found/expired
+        """
+        try:
+            redis_key = self._make_key(key)
+            data = self.client.get(redis_key)
+
+            if data is None:
+                return None
+
+            # Deserialize with pickle
+            value = pickle.loads(data)
+            logger.debug(f"Redis cache HIT: {key}")
+
+            # Increment hit counter
+            self.client.incr(f"{self.key_prefix}stats:hits")
+
+            return value
+
+        except Exception as e:
+            logger.error(f"Redis GET error for key {key}: {e}")
+            self.client.incr(f"{self.key_prefix}stats:misses")
+            return None
+
+    def set(
+        self,
+        key: str,
+        value: Any,
+        ttl: Optional[int] = None,
+        source: str = "unknown"
+    ) -> None:
+        """
+        Set value in Redis cache
+
+        Args:
+            key: Cache key
+            value: Value to cache
+            ttl: Time-to-live in seconds (None = use default)
+            source: Source of the data (for debugging)
+        """
+        try:
+            redis_key = self._make_key(key)
+            ttl = ttl or self.default_ttl
+
+            # Serialize with pickle
+            data = pickle.dumps(value)
+
+            # Set with expiration
+            self.client.setex(redis_key, ttl, data)
+
+            logger.debug(f"Redis cache SET: {key} (TTL: {ttl}s, source: {source})")
+
+        except Exception as e:
+            logger.error(f"Redis SET error for key {key}: {e}")
+
+    def delete(self, key: str) -> bool:
+        """Delete key from Redis cache"""
+        try:
+            redis_key = self._make_key(key)
+            result = self.client.delete(redis_key)
+            if result > 0:
+                logger.debug(f"Redis cache DELETE: {key}")
+                return True
+            return False
+        except Exception as e:
+            logger.error(f"Redis DELETE error for key {key}: {e}")
+            return False
+
+    def clear(self) -> int:
+        """Clear all cache entries with our prefix"""
+        try:
+            # Find all keys with our prefix
+            pattern = f"{self.key_prefix}*"
+            keys = list(self.client.scan_iter(match=pattern, count=100))
+
+            # Exclude stats keys
+            keys_to_delete = [
+                k for k in keys
+                if not k.decode().startswith(f"{self.key_prefix}stats:")
+            ]
+
+            if keys_to_delete:
+                count = self.client.delete(*keys_to_delete)
+                logger.info(f"Redis cache cleared: {count} entries removed")
+                return count
+
+            return 0
+
+        except Exception as e:
+            logger.error(f"Redis CLEAR error: {e}")
+            return 0
+
+    def cleanup_expired(self) -> int:
+        """
+        Redis automatically handles expiration, so this is a no-op
+
+        Returns:
+            0 (Redis handles expiration automatically)
+        """
+        logger.debug("Redis handles expiration automatically")
+        return 0
+
+    def stats(self) -> Dict[str, Any]:
+        """Get cache statistics from Redis"""
+        try:
+            # Get Redis info
+            info = self.client.info('stats')
+
+            # Get our custom counters
+            hits = int(self.client.get(f"{self.key_prefix}stats:hits") or 0)
+            misses = int(self.client.get(f"{self.key_prefix}stats:misses") or 0)
+            total_requests = hits + misses
+            hit_rate = (hits / total_requests * 100) if total_requests > 0 else 0
+
+            # Count keys with our prefix (expensive for large datasets)
+            pattern = f"{self.key_prefix}*"
+            cursor = 0
+            total_entries = 0
+            while True:
+                cursor, keys = self.client.scan(cursor, match=pattern, count=100)
+                # Exclude stats keys
+                total_entries += len([
+                    k for k in keys
+                    if not k.decode().startswith(f"{self.key_prefix}stats:")
+                ])
+                if cursor == 0:
+                    break
+
+            return {
+                "backend": "redis",
+                "total_entries": total_entries,
+                "total_hits": hits,
+                "total_misses": misses,
+                "hit_rate_pct": round(hit_rate, 2),
+                "total_requests": total_requests,
+                "redis_version": info.get('redis_version', 'unknown'),
+                "connected_clients": info.get('connected_clients', 0),
+            }
+
+        except Exception as e:
+            logger.error(f"Redis STATS error: {e}")
+            return {
+                "backend": "redis",
+                "error": str(e)
+            }
+
+    def ping(self) -> bool:
+        """Check if Redis is reachable"""
+        try:
+            return self.client.ping()
+        except Exception as e:
+            logger.error(f"Redis PING error: {e}")
+            return False
+
+
 # Global cache instance
-_global_cache: Optional[InMemoryCache] = None
+_global_cache: Optional[Any] = None  # Can be InMemoryCache or RedisCache
 
 
-def get_cache() -> InMemoryCache:
-    """Get or create global cache instance"""
+def get_cache():
+    """
+    Get or create global cache instance
+
+    Returns InMemoryCache or RedisCache based on environment variables:
+    - CACHE_BACKEND=redis: Use Redis cache (recommended for production)
+    - CACHE_BACKEND=memory: Use in-memory cache (default for development)
+
+    Environment variables for Redis:
+    - REDIS_HOST: Redis host (default: localhost)
+    - REDIS_PORT: Redis port (default: 6379)
+    - REDIS_DB: Redis database number (default: 0)
+    - REDIS_PASSWORD: Redis password (optional)
+    - CACHE_TTL: Default TTL in seconds (default: 300)
+
+    Returns:
+        Cache instance (InMemoryCache or RedisCache)
+    """
     global _global_cache
 
     if _global_cache is None:
-        # Default TTL from environment or 5 minutes
+        cache_backend = os.getenv('CACHE_BACKEND', 'memory').lower()
         default_ttl = int(os.getenv('CACHE_TTL', 300))
-        _global_cache = InMemoryCache(default_ttl=default_ttl)
+
+        if cache_backend == 'redis':
+            try:
+                _global_cache = RedisCache(
+                    default_ttl=default_ttl,
+                    host=os.getenv('REDIS_HOST', 'localhost'),
+                    port=int(os.getenv('REDIS_PORT', 6379)),
+                    db=int(os.getenv('REDIS_DB', 0)),
+                    password=os.getenv('REDIS_PASSWORD'),
+                    key_prefix=os.getenv('REDIS_KEY_PREFIX', 'purpura:')
+                )
+                logger.info("✅ Using Redis cache (distributed)")
+            except Exception as e:
+                logger.warning(
+                    f"Failed to initialize Redis cache: {e}. "
+                    f"Falling back to InMemoryCache"
+                )
+                _global_cache = InMemoryCache(default_ttl=default_ttl)
+        else:
+            _global_cache = InMemoryCache(default_ttl=default_ttl)
+            logger.info("✅ Using InMemory cache (local)")
 
     return _global_cache
 

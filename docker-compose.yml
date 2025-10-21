@@ -1,4 +1,19 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: purpura-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
   minio:
     image: minio/minio:latest
     container_name: minio
@@ -89,6 +104,7 @@ services:
       - ./trino/catalog:/etc/trino/catalog:ro
 
 volumes:
+  redis_data:
   minio_data:
   metastore_db_data:
 
