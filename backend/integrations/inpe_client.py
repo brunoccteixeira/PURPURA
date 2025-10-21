@@ -12,6 +12,9 @@ from datetime import datetime
 import httpx
 from dataclasses import dataclass
 
+from .cache import cache_response, get_cache
+from .retry import retry_with_backoff, RetryConfig, CircuitBreaker
+
 logger = logging.getLogger(__name__)
 
 
@@ -42,6 +45,7 @@ class INPEClient:
 
     BASE_URL = "http://pclima.inpe.br/analise/API"
     TIMEOUT = 30.0
+    CACHE_TTL = 3600  # 1 hour cache for climate projections
 
     # Scenario mapping: our internal names -> INPE names
     SCENARIO_MAP = {
@@ -66,7 +70,27 @@ class INPEClient:
             api_key: Optional API key (if required in the future)
         """
         self.api_key = api_key or os.getenv('INPE_API_KEY')
-        self.client = httpx.Client(timeout=self.TIMEOUT)
+
+        # Use connection pooling for better performance
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
+
+        self.client = httpx.Client(
+            timeout=self.TIMEOUT,
+            limits=limits,
+            http2=True  # Enable HTTP/2 for better performance
+        )
+
+        # Initialize circuit breaker
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=3,
+            recovery_timeout=60.0
+        )
+
+        logger.info("INPE Client initialized with connection pooling and circuit breaker")
 
     def __del__(self):
         """Cleanup"""
@@ -174,6 +198,7 @@ class INPEClient:
             data_source='INPE (mock)'
         )
 
+    @cache_response(ttl=3600, key_prefix="inpe_heat", source="INPE")
     def get_heat_stress_projection(
         self,
         latitude: float,
@@ -185,6 +210,8 @@ class INPEClient:
         Get heat stress risk projection (0-1 scale)
 
         Based on projected temperature increases and frequency of extreme heat days
+
+        NOTE: Cached for 1 hour
         """
         projection = self._get_mock_projection(
             latitude, longitude, 'temperature', scenario, str(year)
@@ -200,6 +227,7 @@ class INPEClient:
 
         return round(risk, 3)
 
+    @cache_response(ttl=3600, key_prefix="inpe_drought", source="INPE")
     def get_drought_risk_projection(
         self,
         latitude: float,
@@ -211,6 +239,8 @@ class INPEClient:
         Get drought risk projection (0-1 scale)
 
         Based on projected precipitation changes
+
+        NOTE: Cached for 1 hour
         """
         projection = self._get_mock_projection(
             latitude, longitude, 'precipitation', scenario, str(year)
@@ -230,6 +260,10 @@ class INPEClient:
 
         return round(risk, 3)
 
+    @retry_with_backoff(
+        RetryConfig(max_attempts=2, initial_delay=0.5, retriable_exceptions=(Exception,)),
+        log_attempts=False
+    )
     def health_check(self) -> Dict[str, Any]:
         """
         Check if INPE API is accessible
@@ -241,10 +275,15 @@ class INPEClient:
             # Try to ping the main portal
             response = self.client.get("http://pclima.inpe.br", timeout=5.0)
 
+            # Get cache stats
+            cache_stats = get_cache().stats()
+
             return {
                 'service': 'INPE',
                 'status': 'available' if response.status_code == 200 else 'degraded',
-                'response_time_ms': response.elapsed.total_seconds() * 1000,
+                'response_time_ms': round(response.elapsed.total_seconds() * 1000, 2),
+                'circuit_breaker_state': self.circuit_breaker.state,
+                'cache_stats': cache_stats,
                 'timestamp': datetime.utcnow().isoformat(),
             }
         except Exception as e:
@@ -253,6 +292,7 @@ class INPEClient:
                 'service': 'INPE',
                 'status': 'unavailable',
                 'error': str(e),
+                'circuit_breaker_state': self.circuit_breaker.state,
                 'timestamp': datetime.utcnow().isoformat(),
             }
 

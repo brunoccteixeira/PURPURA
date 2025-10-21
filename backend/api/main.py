@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import os
 
 # Import routers
-from .routers import documents, extraction, risk, compliance, health
+from .routers import documents, extraction, risk, compliance, health, metrics
 
 # Environment
 API_VERSION = os.getenv("API_VERSION", "1.0.0")
@@ -48,6 +48,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(health.router, prefix="/api/v1")
+app.include_router(metrics.router, prefix="/api/v1")
 app.include_router(documents.router, prefix="/api/v1/documents", tags=["Documents"])
 app.include_router(extraction.router, prefix="/api/v1/extraction", tags=["Extraction"])
 app.include_router(risk.router, prefix="/api/v1/risk", tags=["Risk Assessment"])

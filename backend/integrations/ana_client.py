@@ -15,6 +15,9 @@ import httpx
 from dataclasses import dataclass
 import xml.etree.ElementTree as ET
 
+from .cache import cache_response, get_cache
+from .retry import retry_with_backoff, RetryConfig, CircuitBreaker
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,7 +72,27 @@ class ANAClient:
             api_token: OAuth token for new REST API (optional)
         """
         self.api_token = api_token or os.getenv('ANA_API_TOKEN')
-        self.client = httpx.Client(timeout=self.TIMEOUT)
+
+        # Use connection pooling
+        limits = httpx.Limits(
+            max_keepalive_connections=5,
+            max_connections=10,
+            keepalive_expiry=30.0
+        )
+
+        self.client = httpx.Client(
+            timeout=self.TIMEOUT,
+            limits=limits,
+            http2=True
+        )
+
+        # Initialize circuit breaker
+        self.circuit_breaker = CircuitBreaker(
+            failure_threshold=3,
+            recovery_timeout=60.0
+        )
+
+        logger.info("ANA Client initialized with connection pooling and circuit breaker")
 
     def __del__(self):
         """Cleanup"""
@@ -217,6 +240,7 @@ class ANAClient:
 
         return data
 
+    @cache_response(ttl=600, key_prefix="ana_flood", source="ANA")  # 10 min cache for rainfall
     def get_flood_risk_from_rainfall(
         self,
         station_code: str,
@@ -231,6 +255,8 @@ class ANAClient:
 
         Returns:
             Flood risk score (0-1)
+
+        NOTE: Cached for 10 minutes
         """
         try:
             end_date = datetime.now()
