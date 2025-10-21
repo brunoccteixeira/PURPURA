@@ -1,54 +1,73 @@
-# PÚRPURA Frontend
+# React + TypeScript + Vite
 
-**React + TypeScript dashboard for municipal climate risk assessment**
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Coming Soon (Week 5-8)
+Currently, two official plugins are available:
 
-This directory will contain:
-- React 18 + TypeScript application
-- TanStack Query for API state management
-- Tailwind CSS for styling
-- Leaflet for interactive maps
-- Recharts/D3 for data visualizations
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## Planned Structure
+## React Compiler
 
-```
-frontend/
-├── src/
-│   ├── components/      # Reusable UI components
-│   ├── pages/          # Route pages (Dashboard, Documents, Reports)
-│   ├── services/       # API client
-│   ├── hooks/          # Custom React hooks
-│   ├── utils/          # Utilities
-│   └── App.tsx
-├── public/
-├── package.json
-└── vite.config.ts
-```
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## Tech Stack
+## Expanding the ESLint configuration
 
-- **Framework:** React 18
-- **Language:** TypeScript
-- **Build Tool:** Vite
-- **Styling:** Tailwind CSS
-- **State Management:** TanStack Query
-- **Routing:** React Router v6
-- **Maps:** Leaflet + React-Leaflet
-- **Charts:** Recharts
-- **i18n:** react-i18next (pt-BR)
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## Development Commands (Future)
+```js
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
 
-```bash
-npm install       # Install dependencies
-npm run dev       # Start dev server
-npm run build     # Build for production
-npm run preview   # Preview production build
-npm test          # Run tests
+      // Remove tseslint.configs.recommended and replace with this
+      tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
----
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-**Status:** Planned for Week 5
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default defineConfig([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
+```
