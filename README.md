@@ -6,6 +6,28 @@ Powered by [OS-Climate](https://os-climate.org) open-source tools + custom AI ex
 
 ---
 
+## ✅ MVP Status: Ready for Testing!
+
+**Week 5-6 Complete** — Physical Risk Dashboard is live!
+
+🎯 **What's Working:**
+- ✅ **Backend API**: Physical risk assessment for 10 Brazilian municipalities
+- ✅ **Frontend Dashboard**: React + TypeScript with advanced visualizations
+- ✅ **Data Integration**: INPE + Cemaden + INMET + Geographic Heuristics
+- ✅ **5 Hazard Types**: Flood, Drought, Heat Stress, Landslide, Coastal Inundation
+- ✅ **3 Climate Scenarios**: RCP 2.6, 4.5, 8.5
+- ✅ **Temporal Projections**: Current → 2030 → 2050
+
+📊 **Dashboard Features:**
+- StatsOverview (6 key risk metrics)
+- RiskChart (temporal evolution line chart)
+- ScenarioComparison (RCP scenario bar chart)
+- RiskCard grid (individual hazard cards)
+
+🚀 **Quick Demo:** [See Quick Start below](#-quick-start) to run locally in 5 minutes!
+
+---
+
 ## 🎯 Mission
 
 Enable Brazilian organizations to:
@@ -20,21 +42,23 @@ Enable Brazilian organizations to:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + TS)                     │
-│  📊 Municipal Dashboard │ 📄 Document Manager │ 📈 Reports   │
+│                  Frontend (React + TypeScript)               │
+│     📊 Municipal Dashboard ✅ │ 📄 Reports (Planned)         │
+│   • Risk visualizations • Scenario comparison • Charts       │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ REST API
+                           │ REST API (FastAPI)
 ┌──────────────────────────┴──────────────────────────────────┐
 │                  Backend (FastAPI + Python)                  │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │ Extraction  │  │ Risk Engine  │  │  Compliance  │       │
-│  │ (Hybrid)    │  │ (physrisk)   │  │  (Lei 14904) │       │
+│  │ (Hybrid) ✅ │  │ (physrisk) ✅│  │  (Planned)   │       │
 │  └─────────────┘  └──────────────┘  └──────────────┘       │
+│  INPE • Cemaden • INMET • IBGE                              │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────┴──────────────────────────────────┐
 │             Data Layer (Trino + Iceberg + MinIO)             │
-│  📦 Documents │ 📊 Extractions │ 🗺️ Geospatial (H3)         │
+│  📦 Documents ✅ │ 📊 Extractions ✅ │ 🗺️ Geospatial ✅     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,10 +81,11 @@ Enable Brazilian organizations to:
 
 **Frontend:**
 - React 18 + TypeScript
-- TanStack Query (API state)
-- Recharts/D3 (visualizations)
-- Leaflet (maps)
-- Tailwind CSS
+- Vite (build tool with HMR)
+- Axios (HTTP client)
+- Recharts (data visualizations)
+- Tailwind CSS (utility-first styling)
+- Lucide React (icons)
 
 ---
 
@@ -119,7 +144,7 @@ uvicorn api.main:app --reload --port 8000
 # API docs available at http://localhost:8000/docs
 ```
 
-### 5. Start Frontend (Coming Soon)
+### 5. Start Frontend
 
 ```bash
 cd frontend
@@ -127,6 +152,12 @@ npm install
 npm run dev
 
 # Dashboard at http://localhost:3000
+# Features:
+# - 10 Brazilian municipalities (São Paulo, Rio, Fortaleza, etc.)
+# - 5 hazard types (flood, drought, heat stress, landslide, coastal inundation)
+# - 3 RCP scenarios (2.6, 4.5, 8.5)
+# - Temporal projections (Current → 2030 → 2050)
+# - Advanced visualizations (charts, stats, scenario comparison)
 ```
 
 ---
@@ -196,9 +227,18 @@ PÚRPURA leverages these open-source components:
 |-----------|---------|--------|
 | `osc-transformer-presteps` | PDF → JSON conversion | ✅ Integrated |
 | `osc-transformer-based-extractor` | BERT KPI extraction | ✅ Integrated |
-| `physrisk-lib` | Climate risk calculations | 🚧 In Progress |
-| `physrisk-ui` | Dashboard patterns | 📋 Planned |
-| H3 geospatial indexing | Municipal risk mapping | 📋 Planned |
+| `physrisk-lib` | Climate risk calculations | ✅ Integrated |
+| `physrisk-ui` | Dashboard patterns | ✅ Integrated |
+| H3 geospatial indexing | Municipal risk mapping | ✅ Integrated |
+
+### Brazilian Data Sources
+
+| Source | Purpose | Status |
+|--------|---------|--------|
+| **INPE** (PCBr API) | Climate projections (temperature, precipitation) | ✅ Integrated |
+| **Cemaden** | Historical hazard frequency (floods, landslides) | ✅ Mock data ready |
+| **INMET** (BDMEP) | Climate normals (1961-2023), station catalog | ✅ Mock data ready |
+| **IBGE** | Municipality codes, population, coordinates | ✅ Integrated |
 
 **License Compliance:**
 All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and contributes improvements upstream.
@@ -220,9 +260,9 @@ All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and c
 - [x] Data lakehouse infrastructure
 - [x] LLM extraction pipeline (OpenAI)
 - [x] FastAPI backend scaffold
-- [ ] Transformer-based extraction integration
-- [ ] Physical risk engine (physrisk)
-- [ ] Municipal dashboard UI
+- [x] Transformer-based extraction integration
+- [x] Physical risk engine (physrisk + Brazilian data sources)
+- [x] Municipal dashboard UI (React + TypeScript)
 - [ ] 2 pilot deployments
 
 ### Phase 2: Enterprise TSB (Months 4-6)
