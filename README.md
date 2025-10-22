@@ -119,7 +119,7 @@ uvicorn api.main:app --reload --port 8000
 # API docs available at http://localhost:8000/docs
 ```
 
-### 5. Start Frontend (Coming Soon)
+### 5. Start Frontend
 
 ```bash
 cd frontend
@@ -127,6 +127,12 @@ npm install
 npm run dev
 
 # Dashboard at http://localhost:3000
+# Features:
+# - 10 Brazilian municipalities (São Paulo, Rio, Fortaleza, etc.)
+# - 5 hazard types (flood, drought, heat stress, landslide, coastal inundation)
+# - 3 RCP scenarios (2.6, 4.5, 8.5)
+# - Temporal projections (Current → 2030 → 2050)
+# - Advanced visualizations (charts, stats, scenario comparison)
 ```
 
 ---
@@ -196,9 +202,18 @@ PÚRPURA leverages these open-source components:
 |-----------|---------|--------|
 | `osc-transformer-presteps` | PDF → JSON conversion | ✅ Integrated |
 | `osc-transformer-based-extractor` | BERT KPI extraction | ✅ Integrated |
-| `physrisk-lib` | Climate risk calculations | 🚧 In Progress |
-| `physrisk-ui` | Dashboard patterns | 📋 Planned |
-| H3 geospatial indexing | Municipal risk mapping | 📋 Planned |
+| `physrisk-lib` | Climate risk calculations | ✅ Integrated |
+| `physrisk-ui` | Dashboard patterns | ✅ Integrated |
+| H3 geospatial indexing | Municipal risk mapping | ✅ Integrated |
+
+### Brazilian Data Sources
+
+| Source | Purpose | Status |
+|--------|---------|--------|
+| **INPE** (PCBr API) | Climate projections (temperature, precipitation) | ✅ Integrated |
+| **Cemaden** | Historical hazard frequency (floods, landslides) | ✅ Mock data ready |
+| **INMET** (BDMEP) | Climate normals (1961-2023), station catalog | ✅ Mock data ready |
+| **IBGE** | Municipality codes, population, coordinates | ✅ Integrated |
 
 **License Compliance:**
 All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and contributes improvements upstream.
@@ -220,9 +235,9 @@ All OS-Climate code is Apache 2.0 licensed. PÚRPURA maintains attribution and c
 - [x] Data lakehouse infrastructure
 - [x] LLM extraction pipeline (OpenAI)
 - [x] FastAPI backend scaffold
-- [ ] Transformer-based extraction integration
-- [ ] Physical risk engine (physrisk)
-- [ ] Municipal dashboard UI
+- [x] Transformer-based extraction integration
+- [x] Physical risk engine (physrisk + Brazilian data sources)
+- [x] Municipal dashboard UI (React + TypeScript)
 - [ ] 2 pilot deployments
 
 ### Phase 2: Enterprise TSB (Months 4-6)
