@@ -6,6 +6,28 @@ Powered by [OS-Climate](https://os-climate.org) open-source tools + custom AI ex
 
 ---
 
+## ✅ MVP Status: Ready for Testing!
+
+**Week 5-6 Complete** — Physical Risk Dashboard is live!
+
+🎯 **What's Working:**
+- ✅ **Backend API**: Physical risk assessment for 10 Brazilian municipalities
+- ✅ **Frontend Dashboard**: React + TypeScript with advanced visualizations
+- ✅ **Data Integration**: INPE + Cemaden + INMET + Geographic Heuristics
+- ✅ **5 Hazard Types**: Flood, Drought, Heat Stress, Landslide, Coastal Inundation
+- ✅ **3 Climate Scenarios**: RCP 2.6, 4.5, 8.5
+- ✅ **Temporal Projections**: Current → 2030 → 2050
+
+📊 **Dashboard Features:**
+- StatsOverview (6 key risk metrics)
+- RiskChart (temporal evolution line chart)
+- ScenarioComparison (RCP scenario bar chart)
+- RiskCard grid (individual hazard cards)
+
+🚀 **Quick Demo:** [See Quick Start below](#-quick-start) to run locally in 5 minutes!
+
+---
+
 ## 🎯 Mission
 
 Enable Brazilian organizations to:
@@ -20,21 +42,23 @@ Enable Brazilian organizations to:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Frontend (React + TS)                     │
-│  📊 Municipal Dashboard │ 📄 Document Manager │ 📈 Reports   │
+│                  Frontend (React + TypeScript)               │
+│     📊 Municipal Dashboard ✅ │ 📄 Reports (Planned)         │
+│   • Risk visualizations • Scenario comparison • Charts       │
 └──────────────────────────┬──────────────────────────────────┘
-                           │ REST API
+                           │ REST API (FastAPI)
 ┌──────────────────────────┴──────────────────────────────────┐
 │                  Backend (FastAPI + Python)                  │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐       │
 │  │ Extraction  │  │ Risk Engine  │  │  Compliance  │       │
-│  │ (Hybrid)    │  │ (physrisk)   │  │  (Lei 14904) │       │
+│  │ (Hybrid) ✅ │  │ (physrisk) ✅│  │  (Planned)   │       │
 │  └─────────────┘  └──────────────┘  └──────────────┘       │
+│  INPE • Cemaden • INMET • IBGE                              │
 └──────────────────────────┬──────────────────────────────────┘
                            │
 ┌──────────────────────────┴──────────────────────────────────┐
 │             Data Layer (Trino + Iceberg + MinIO)             │
-│  📦 Documents │ 📊 Extractions │ 🗺️ Geospatial (H3)         │
+│  📦 Documents ✅ │ 📊 Extractions ✅ │ 🗺️ Geospatial ✅     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,10 +81,11 @@ Enable Brazilian organizations to:
 
 **Frontend:**
 - React 18 + TypeScript
-- TanStack Query (API state)
-- Recharts/D3 (visualizations)
-- Leaflet (maps)
-- Tailwind CSS
+- Vite (build tool with HMR)
+- Axios (HTTP client)
+- Recharts (data visualizations)
+- Tailwind CSS (utility-first styling)
+- Lucide React (icons)
 
 ---
 
