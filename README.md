@@ -1,6 +1,6 @@
 # 🟣 PÚRPURA Climate OS
 
-**Climate risk assessment and IFRS S2 compliance platform for Brazilian municipalities, utilities, and enterprises**
+**Climate risk assessment and IFRS S2 compliance platform for Brazilian organizations, utilities and municipalities**
 
 Powered by [OS-Climate](https://os-climate.org) open-source tools + custom AI extraction pipeline.
 
