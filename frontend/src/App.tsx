@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { getMunicipalRisk } from './api';
 import type { MunicipalRisk, RiskScenario } from './types';
 import RiskCard from './components/RiskCard';
+import RiskChart from './components/RiskChart';
+import ScenarioComparison from './components/ScenarioComparison';
+import StatsOverview from './components/StatsOverview';
 import { SCENARIO_LABELS, getRiskColor } from './types';
 
 // Available municipalities
@@ -121,36 +124,11 @@ function App() {
         {/* Risk Dashboard */}
         {riskData && (
           <div className="space-y-6">
-            {/* Overview */}
-            <div className="card">
-              <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">
-                {riskData.municipality_name}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                Código IBGE: {riskData.ibge_code} | Cenário: {SCENARIO_LABELS[riskData.scenario]}
-              </p>
+            {/* Stats Overview */}
+            <StatsOverview riskData={riskData} />
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Risco Geral</p>
-                  <p className={`text-3xl font-bold ${getRiskColor(riskData.overall_risk_score)}`}>
-                    {Math.round(riskData.overall_risk_score * 100)}%
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">População Exposta</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {riskData.vulnerability.population_exposed.toLocaleString('pt-BR')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Capacidade Adaptativa</p>
-                  <p className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {Math.round(riskData.vulnerability.adaptive_capacity_score * 100)}%
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* Temporal Evolution Chart */}
+            <RiskChart hazards={riskData.hazards} />
 
             {/* Hazard Cards */}
             <div>
@@ -164,11 +142,14 @@ function App() {
               </div>
             </div>
 
+            {/* Scenario Comparison */}
+            <ScenarioComparison ibgeCode={riskData.ibge_code} />
+
             {/* Recommendations */}
             {riskData.recommendations.length > 0 && (
               <div className="card">
                 <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-                  Recomendações
+                  Recomendações de Adaptação
                 </h3>
                 <ul className="space-y-2">
                   {riskData.recommendations.map((rec, idx) => (
