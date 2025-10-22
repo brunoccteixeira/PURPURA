@@ -95,14 +95,16 @@ class PhysicalRiskService:
             try:
                 from .inpe_client import get_inpe_client, INPEScenario
                 from .cemaden_client import get_cemaden_client, CemadenHazardType
+                from .inmet_client import get_inmet_client
 
                 self.inpe_client = get_inpe_client()
                 self.cemaden_client = get_cemaden_client()
+                self.inmet_client = get_inmet_client()
                 self.INPEScenario = INPEScenario
                 self.CemadenHazardType = CemadenHazardType
-                logger.info("PhysicalRiskService initialized with INPE/Cemaden integration")
+                logger.info("PhysicalRiskService initialized with INPE/Cemaden/INMET integration")
             except ImportError as e:
-                logger.warning(f"Could not import INPE/Cemaden clients: {e}")
+                logger.warning(f"Could not import data clients: {e}")
                 self.use_real_data = False
         else:
             logger.info("PhysicalRiskService initialized with mock data only")
@@ -144,7 +146,7 @@ class PhysicalRiskService:
 
         # Build hazard scores
         hazard_scores = []
-        data_source = "INPE+Cemaden+Heuristics" if self.use_real_data else "Geographic heuristics"
+        data_source = "INPE+Cemaden+INMET+Heuristics" if self.use_real_data else "Geographic heuristics"
 
         for hazard_type, base_risk in baseline_risks.items():
             score = HazardRiskScore(
@@ -230,9 +232,10 @@ class PhysicalRiskService:
         # Clamp all values to [0, 1]
         risks = {k: max(0.0, min(1.0, v)) for k, v in risks.items()}
 
-        # Enhance with Cemaden historical data if available
+        # Enhance with historical data if available
         if self.use_real_data and ibge_code:
             risks = self._enhance_with_cemaden_history(ibge_code, risks)
+            risks = self._calibrate_with_inmet_climate(latitude, longitude, risks)
 
         return risks
 
@@ -283,6 +286,104 @@ class PhysicalRiskService:
             return geographic_risks
 
         return enhanced_risks
+
+    def _calibrate_with_inmet_climate(
+        self,
+        latitude: float,
+        longitude: float,
+        geographic_risks: Dict[HazardType, float]
+    ) -> Dict[HazardType, float]:
+        """
+        Calibrate risk scores using INMET historical climate data
+
+        Uses temperature and precipitation normals to adjust hazard risks
+        """
+        try:
+            # Find nearest INMET station
+            station = self.inmet_client.get_station_by_location(latitude, longitude)
+            if not station:
+                logger.debug("No INMET station found nearby - skipping calibration")
+                return geographic_risks
+
+            # Get historical climate summary
+            climate = self.inmet_client.get_historical_climate_summary(
+                station.code,
+                start_year=2000,
+                end_year=2023
+            )
+
+            if not climate:
+                return geographic_risks
+
+            calibrated_risks = geographic_risks.copy()
+
+            # Extract climate metrics
+            annual_precip_mm = climate.get("precipitation", {}).get("mean_annual_mm", 1400)
+            temp_avg_c = climate.get("temperature", {}).get("mean_annual_c", 22)
+            temp_range_c = climate.get("temperature", {}).get("mean_max_c", 25) - \
+                          climate.get("temperature", {}).get("mean_min_c", 19)
+
+            # Calibrate drought risk based on precipitation
+            # Lower rainfall → higher drought risk
+            if annual_precip_mm < 1000:  # Semi-arid
+                drought_factor = 1.3
+            elif annual_precip_mm < 1300:  # Sub-humid
+                drought_factor = 1.1
+            elif annual_precip_mm > 2000:  # Very humid
+                drought_factor = 0.8
+            else:
+                drought_factor = 1.0
+
+            calibrated_risks[HazardType.DROUGHT] = min(
+                1.0,
+                geographic_risks[HazardType.DROUGHT] * drought_factor
+            )
+
+            # Calibrate flood risk based on precipitation
+            # Higher rainfall → higher flood risk
+            if annual_precip_mm > 2000:
+                flood_factor = 1.2
+            elif annual_precip_mm > 1600:
+                flood_factor = 1.1
+            elif annual_precip_mm < 1000:
+                flood_factor = 0.85
+            else:
+                flood_factor = 1.0
+
+            calibrated_risks[HazardType.FLOOD] = min(
+                1.0,
+                geographic_risks[HazardType.FLOOD] * flood_factor
+            )
+
+            # Calibrate heat stress based on temperature
+            # Higher average temp + larger daily range → higher heat stress
+            if temp_avg_c > 26:
+                heat_factor = 1.15
+            elif temp_avg_c > 24:
+                heat_factor = 1.05
+            elif temp_avg_c < 18:
+                heat_factor = 0.9
+            else:
+                heat_factor = 1.0
+
+            if temp_range_c > 7:  # High daily variation
+                heat_factor *= 1.05
+
+            calibrated_risks[HazardType.HEAT_STRESS] = min(
+                1.0,
+                geographic_risks[HazardType.HEAT_STRESS] * heat_factor
+            )
+
+            logger.debug(
+                f"Calibrated risks with INMET data from station {station.code} "
+                f"({annual_precip_mm}mm/year, {temp_avg_c}°C avg)"
+            )
+
+            return calibrated_risks
+
+        except Exception as e:
+            logger.warning(f"INMET calibration failed: {e}")
+            return geographic_risks
 
     def _calculate_projected_risks_with_inpe(
         self,
